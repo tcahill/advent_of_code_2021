@@ -1,0 +1,102 @@
+* Part 2
+
+Based on your calculations, the planned course doesn't seem to make any sense.
+You find the submarine manual and discover that the process is actually slightly
+more complicated.
+
+In addition to horizontal position and depth, you'll also need to track a third
+value, aim, which also starts at 0. The commands also mean something entirely
+different than you first thought:
+
+down X increases your aim by X units.
+up X decreases your aim by X units.
+forward X does two things:
+It increases your horizontal position by X units.
+It increases your depth by your aim multiplied by X.
+
+Again note that since you're on a submarine, down and up do the opposite of what
+you might expect: "down" means aiming in the positive direction.
+
+Now, the above example does something different:
+
+forward 5 adds 5 to your horizontal position, a total of 5. Because your aim is
+0, your depth does not change.
+
+down 5 adds 5 to your aim, resulting in a value of 5.
+
+forward 8 adds 8 to your horizontal position, a total of 13. Because your aim is
+5, your depth increases by 8*5=40.
+
+up 3 decreases your aim by 3, resulting in a value of 2.
+
+down 8 adds 8 to your aim, resulting in a value of 10.
+
+forward 2 adds 2 to your horizontal position, a total of 15. Because your aim is
+10, your depth increases by 2*10=20 to a total of 60.
+
+After following these new instructions, you would have a horizontal position of
+15 and a depth of 60. (Multiplying these produces 900.)
+
+Using this new interpretation of the commands, calculate the horizontal position
+and depth you would have after following the planned course. What do you get if
+you multiply your final horizontal position by your final depth?
+
+* Ruby
+
+#+begin_src ruby
+  aim = 0
+  position = [0, 0]
+  File.readlines('input').each do |line|
+    direction, amount = line.split
+    amount = amount.to_i
+    case direction
+    when 'forward'
+      position[0] += amount
+      position[1] += amount * aim
+    when 'down'
+      aim += amount
+    when 'up'
+      aim -= amount
+    end
+  end
+
+  position[0] * position[1]
+#+end_src
+
+#+RESULTS:
+: 1544000595
+
+* Rust
+
+#+begin_src rust
+  use std::fs::File;
+  use std::io::{BufRead, BufReader};
+
+  fn main() {
+      let f = File::open("input").expect("Unable to open file");
+      let buf = BufReader::new(f);
+
+      let mut aim = 0;
+      let mut position: [i32; 2] = [0, 0];
+      for line in buf.lines() {
+          let line = line.expect("Unable to read line");
+          let command: Vec<&str> = line.split(' ').collect();
+          let amount = command[1].parse::<i32>().unwrap();
+          match command[0] {
+              "forward" => {
+                  position[0] += amount;
+                  position[1] += amount * aim;
+              },
+              "down" => aim += amount,
+              "up" => aim -= amount,
+              _ => panic!("unrecognized command '{}'", command[0])
+          }
+      }
+
+      println!("{}", position[0] * position[1]);
+  }
+#+end_src
+
+#+RESULTS:
+: 1544000595
+
