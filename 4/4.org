@@ -1,0 +1,287 @@
+* Part 1
+
+You're already almost 1.5km (almost a mile) below the surface of the ocean,
+already so deep that you can't see any sunlight. What you can see, however, is a
+giant squid that has attached itself to the outside of your submarine.
+
+Maybe it wants to play bingo?
+
+Bingo is played on a set of boards each consisting of a 5x5 grid of numbers.
+Numbers are chosen at random, and the chosen number is marked on all boards on
+which it appears. (Numbers may not appear on all boards.) If all numbers in any
+row or any column of a board are marked, that board wins. (Diagonals don't
+count.)
+
+The submarine has a bingo subsystem to help passengers (currently, you and the
+giant squid) pass the time. It automatically generates a random order in which
+to draw numbers and a random set of boards (your puzzle input). For example:
+
+7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1
+
+| 22 | 13 | 17 | 11 |  0 |
+|  8 |  2 | 23 |  4 | 24 |
+| 21 |  9 | 14 | 16 |  7 |
+|  6 | 10 |  3 | 18 |  5 |
+|  1 | 12 | 20 | 15 | 19 |
+
+
+|  3 | 15 |  0 |  2 | 22 |
+|  9 | 18 | 13 | 17 |  5 |
+| 19 |  8 |  7 | 25 | 23 |
+| 20 | 11 | 10 | 24 |  4 |
+| 14 | 21 | 16 | 12 |  6 |
+
+
+| 14 | 21 | 17 | 24 |  4 |
+| 10 | 16 | 15 |  9 | 19 |
+| 18 |  8 | 23 | 26 | 20 |
+| 22 | 11 | 13 |  6 |  5 |
+|  2 |  0 | 12 |  3 |  7 |
+ 
+After the first five numbers are drawn (7, 4, 9, 5, and 11), there are no
+winners.
+
+After the next six numbers are drawng (17, 23, 2, 0, 14, and 21), there are
+still no winners:
+ 
+Finally, 24 is drawn.
+
+At this point, the third board wins because it has at least one complete row or
+column of marked numbers (in this case, the entire top row is marked: 14 21 17
+24 4).
+
+The score of the winning board can now be calculated. Start by finding the sum
+of all unmarked numbers on that board; in this case, the sum is 188. Then,
+multiply that sum by the number that was just called when the board won, 24, to
+get the final score, 188 * 24 = 4512.
+
+To guarantee victory against the giant squid, figure out which board will win
+first. What will your final score be if you choose that board?
+
+** Ruby
+
+*** Storing the boards
+First, we need to find the board that will win first. To do this, we can iterate
+over each drawn number, update the state of each board to mark the positions
+that match the number, and return a board once any row or column is fully
+marked. One straightforward way to represent a bingo board would be a
+2-dimensional array where the values in the inner arrays are tuples containing
+the number at that position and a boolean indicating whether the number has been
+called yet, but this by itself would be inefficient for updating the state of
+the game at each iteration - we would need to scan every array each time a
+number is called to find the matching board positions. Instead, we can build a
+hash whose keys are the numbers on the boards and whose values can give us the
+position of that number on each board that contains it.
+
+#+name: parse_board_positions
+#+begin_src ruby
+  def parse_board_positions(lines)
+    number_to_board_positions = {}
+
+    # assumption: each board consists of 5 lines, with an empty line between each board
+    lines.each_slice(6).with_index do |board_lines, board_index|
+      board_lines.each_with_index do |line, row|
+        line.split(" ").each_with_index do |number, column|
+          number = number.to_i
+          number_to_board_positions[number] ||= {}
+          number_to_board_positions[number][board_index] = [row, column]
+        end
+      end
+    end
+
+    number_to_board_positions
+  end
+#+end_src
+
+A single entry of the resulting hash looks like this:
+#+begin_src ruby :noweb yes :results output :exports both
+  <<parse_board_positions>>
+
+  lines = File.readlines('input')
+  board_positions = parse_board_positions(lines[2..])
+  pp board_positions.first
+#+end_src
+
+#+RESULTS:
+#+begin_example
+[26,
+ {0=>[0, 0],
+  1=>[0, 1],
+  2=>[0, 2],
+  7=>[1, 3],
+  8=>[4, 2],
+  13=>[1, 0],
+  17=>[0, 0],
+  21=>[4, 3],
+  31=>[0, 0],
+  35=>[1, 0],
+  36=>[3, 2],
+  37=>[1, 0],
+  40=>[1, 3],
+  46=>[1, 4],
+  49=>[1, 4],
+  51=>[3, 0],
+  56=>[3, 0],
+  59=>[0, 4],
+  69=>[0, 4],
+  71=>[3, 3],
+  75=>[4, 1],
+  80=>[3, 2],
+  83=>[1, 1],
+  91=>[3, 0],
+  93=>[0, 0],
+  95=>[1, 1],
+  98=>[1, 1]}]
+#+end_example
+
+*** Finding the winning board
+To find the winner, we can iterate through the drawn numbers and keep track of
+the number of drawn numbers in each row and column of each board. Once any row
+or column has 5 drawn numbers, we've found the winner. We'll also need to
+capture how many numbers we drew before finding a winner to calculate the score.
+
+#+name: find_winner
+#+begin_src ruby
+  def find_winner(number_of_boards, number_to_board_positions, numbers)
+    board_row_sums = Array.new(number_of_boards) { Array.new(5, 0) }
+    board_column_sums = Array.new(number_of_boards) { Array.new(5, 0) }
+
+    drawn_numbers = 0
+    numbers.each do |number|
+      drawn_numbers += 1
+      number_to_board_positions[number].each do |board, position|
+        row, column = position
+        board_row_sums[board][row] += 1
+        return [board, drawn_numbers] if board_row_sums[board][row] == 5
+        board_column_sums[board][column] += 1
+        return [board, drawn_numbers] if board_column_sums[board][column] == 5
+      end
+    end
+  end
+#+end_src
+
+#+begin_src ruby :noweb yes :results output :exports both
+  <<parse_board_positions>>
+  <<find_winner>>
+  lines = File.readlines('input')
+  numbers = lines[0].split(',').map(&:to_i)
+  board_positions = parse_board_positions(lines[2..])
+  number_of_boards = lines.length / 6
+  board, drawn_numbers = find_winner(number_of_boards, board_positions, numbers)
+  puts "Winning board number: #{board}"
+  puts "Numbers drawn: #{drawn_numbers}"
+#+end_src
+
+#+RESULTS:
+: Winning board number: 86
+: Numbers drawn: 34
+
+*** Calculating the score
+We know which board won and which numbers were drawn, so now we just need to
+extract the numbers that weren't drawn from the winning board, sum them, and
+mutliply by the last number drawn.
+
+#+name: calculate_score
+#+begin_src ruby
+  def calculate_score(board, numbers_drawn)
+    not_drawn = []
+    board.each do |line|
+      line.split(" ").each do |number|
+        number = number.to_i
+        if !numbers_drawn.include?(number)
+          not_drawn << number
+        end
+      end
+    end
+
+    not_drawn.sum * numbers_drawn.last
+  end
+#+end_src
+
+#+begin_src ruby :noweb yes :tangle part_1.rb :exports both
+  <<parse_board_positions>>
+
+  <<find_winner>>
+
+  <<calculate_score>>
+
+  lines = File.readlines('input')
+  numbers = lines[0].split(',').map(&:to_i)
+  board_positions = parse_board_positions(lines[2..])
+  number_of_boards = lines.length / 6
+  board, drawn_numbers = find_winner(number_of_boards, board_positions, numbers)
+  board_starting_line = 2 + 6 * board
+  calculate_score(lines[board_starting_line...board_starting_line+5], numbers[...drawn_numbers])
+
+#+end_src
+
+#+RESULTS:
+: 58412
+
+* Part 2
+On the other hand, it might be wise to try a different strategy: let the giant squid win.
+
+You aren't sure how many bingo boards a giant squid could play at once, so
+rather than waste time counting its arms, the safe thing to do is to figure out
+which board will win last and choose that one. That way, no matter which boards
+it picks, it will win for sure.
+
+In the above example, the second board is the last to win, which happens after
+13 is eventually called and its middle column is completely marked. If you were
+to keep playing until this point, the second board would have a sum of unmarked
+numbers equal to 148 for a final score of 148 * 13 = 1924.
+
+Figure out which board will win last. Once it wins, what would its final score be?
+
+** Ruby
+Adapting our solution from part 1 to find the board that will win last is pretty
+simple - we just need to modify the ~find_winner~ function to track the boards
+that have won and iterate until every board has won.
+
+#+name: find_last_winner
+#+begin_src ruby
+  require 'set' 
+  def find_last_winner(number_of_boards, number_to_board_positions, numbers)
+    board_row_sums = Array.new(number_of_boards) { Array.new(5, 0) }
+    board_column_sums = Array.new(number_of_boards) { Array.new(5, 0) }
+
+    drawn_numbers = 0
+    non_winning_boards = Set.new(0...number_of_boards)
+    numbers.each do |number|
+      drawn_numbers += 1
+      number_to_board_positions[number].each do |board, position|
+        row, column = position
+        board_row_sums[board][row] += 1
+        board_column_sums[board][column] += 1
+        if board_row_sums[board][row] == 5 || board_column_sums[board][column] == 5
+          non_winning_boards.delete(board)
+        end
+
+        return [board, drawn_numbers] if non_winning_boards.empty?
+      end
+    end
+  end
+#+end_src
+
+#+begin_src ruby :noweb yes :results output :tangle part_2.rb :exports both
+  <<parse_board_positions>>
+
+  <<find_last_winner>>
+
+  <<calculate_score>>
+
+  lines = File.readlines('input')
+  numbers = lines[0].split(',').map(&:to_i)
+  board_positions = parse_board_positions(lines[2..])
+  number_of_boards = lines.length / 6
+  board, drawn_numbers = find_last_winner(number_of_boards, board_positions, numbers)
+  puts "Winning board number: #{board}"
+  puts "Numbers drawn: #{drawn_numbers}"
+  board_starting_line = 2 + 6 * board
+  puts "Score: #{calculate_score(lines[board_starting_line...board_starting_line+5], numbers[...drawn_numbers])}"
+#+end_src
+
+#+RESULTS:
+: Winning board number: 41
+: Numbers drawn: 88
+: Score: 10030
