@@ -91,7 +91,7 @@ stores the current timer value and the number of fish with that timer value.
   end
 #+end_src
 
-#+begin_src ruby :noweb yes :results output
+#+begin_src ruby :noweb yes :results output :exports both
  <<parse_lanternfish>>
 
  lines = File.readlines('input')
@@ -136,7 +136,7 @@ the count of the structs with timer values 6 and 8 accordingly.
   end
 #+end_src
 
-#+begin_src ruby :noweb yes :tangle part1.rb
+#+begin_src ruby :noweb yes :tangle part1.rb :exports both
   <<parse_lanternfish>>
 
   <<advance_simulation>>
@@ -164,7 +164,7 @@ How many lanternfish would there be after 256 days?
 
 ** Ruby
 
-#+begin_src ruby :noweb yes :tangle part2.rb
+#+begin_src ruby :noweb yes :tangle part2.rb :exports both
   <<parse_lanternfish>>
 
   <<advance_simulation>>
