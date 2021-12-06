@@ -85,7 +85,7 @@ covered by any line segments.
   end
 #+end_src
 
-#+begin_src ruby :noweb yes :tangle part1.rb
+#+begin_src ruby :noweb yes :tangle part1.rb :exports both
   <<parse_line_segments>>
 
   lines = File.readlines('input')
@@ -97,7 +97,7 @@ covered by any line segments.
 : 6548
 
 *** Benchmarking
-#+begin_src ruby :results output :noweb yes
+#+begin_src ruby :results output :noweb yes :exports both
   require 'benchmark'
 
   <<parse_line_segments>>
@@ -239,7 +239,7 @@ might intersect it.
   end
 #+end_src
 
-#+begin_src ruby :noweb yes :tangle part1_improved.rb
+#+begin_src ruby :noweb yes :tangle part1_improved.rb :exports both
   <<parse_line_segments_improved>>
 
   lines = File.readlines('input')
@@ -251,7 +251,7 @@ might intersect it.
 : 6548
 
 **** Benchmarking
-#+begin_src ruby :results output :noweb yes
+#+begin_src ruby :results output :noweb yes :exports both
   require 'benchmark'
 
   <<parse_line_segments_improved>>
@@ -342,7 +342,7 @@ Consider all of the lines. At how many points do at least two lines overlap?
   end
 #+end_src
 
-#+begin_src ruby :noweb yes :tangle part2.rb
+#+begin_src ruby :noweb yes :tangle part2.rb :exports both
   <<parse_line_segments_part_2>>
 
   lines = File.readlines('input')
