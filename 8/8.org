@@ -1,0 +1,271 @@
+* Part 1
+
+You barely reach the safety of the cave when the whale smashes into the cave
+mouth, collapsing it. Sensors indicate another exit to this cave at a much
+greater depth, so you have no choice but to press on.
+
+As your submarine slowly makes its way through the cave system, you notice that
+the four-digit seven-segment displays in your submarine are malfunctioning; they
+must have been damaged during the escape. You'll be in a lot of trouble without
+them, so you'd better figure out what's wrong.
+
+Each digit of a seven-segment display is rendered by turning on or off any of
+seven segments named a through g:
+
+  0:      1:      2:      3:      4:
+ aaaa    ....    aaaa    aaaa    ....
+b    c  .    c  .    c  .    c  b    c
+b    c  .    c  .    c  .    c  b    c
+ ....    ....    dddd    dddd    dddd
+e    f  .    f  e    .  .    f  .    f
+e    f  .    f  e    .  .    f  .    f
+ gggg    ....    gggg    gggg    ....
+
+  5:      6:      7:      8:      9:
+ aaaa    aaaa    aaaa    aaaa    aaaa
+b    .  b    .  .    c  b    c  b    c
+b    .  b    .  .    c  b    c  b    c
+ dddd    dddd    ....    dddd    dddd
+.    f  e    f  .    f  e    f  .    f
+.    f  e    f  .    f  e    f  .    f
+ gggg    gggg    ....    gggg    gggg
+ 
+So, to render a 1, only segments c and f would be turned on; the rest would be
+off. To render a 7, only segments a, c, and f would be turned on.
+
+The problem is that the signals which control the segments have been mixed up on
+each display. The submarine is still trying to display numbers by producing
+output on signal wires a through g, but those wires are connected to segments
+randomly. Worse, the wire/segment connections are mixed up separately for each
+four-digit display! (All of the digits within a display use the same
+connections, though.)
+
+So, you might know that only signal wires b and g are turned on, but that
+doesn't mean segments b and g are turned on: the only digit that uses two
+segments is 1, so it must mean segments c and f are meant to be on. With just
+that information, you still can't tell which wire (b/g) goes to which segment
+(c/f). For that, you'll need to collect more information.
+
+For each display, you watch the changing signals for a while, make a note of all
+ten unique signal patterns you see, and then write down a single four digit
+output value (your puzzle input). Using the signal patterns, you should be able
+to work out which pattern corresponds to which digit.
+
+For example, here is what you might see in a single entry in your notes:
+
+acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab |
+cdfeb fcadb cdfeb cdbaf
+
+(The entry is wrapped here to two lines so it fits; in your notes, it will all
+be on a single line.)
+
+Each entry consists of ten unique signal patterns, a | delimiter, and finally
+the four digit output value. Within an entry, the same wire/segment connections
+are used (but you don't know what the connections actually are). The unique
+signal patterns correspond to the ten different ways the submarine tries to
+render a digit using the current wire/segment connections. Because 7 is the only
+digit that uses three segments, dab in the above example means that to render a
+7, signal lines d, a, and b are on. Because 4 is the only digit that uses four
+segments, eafb means that to render a 4, signal lines e, a, f, and b are on.
+
+Using this information, you should be able to work out which combination of
+signal wires corresponds to each of the ten digits. Then, you can decode the
+four digit output value. Unfortunately, in the above example, all of the digits
+in the output value (cdfeb fcadb cdfeb cdbaf) use five segments and are more
+difficult to deduce.
+
+For now, focus on the easy digits. Consider this larger example:
+
+be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb |
+fdgacbe cefdb cefbgd gcbe
+edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec |
+fcgedb cgb dgebacf gc
+fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef |
+cg cg fdcagb cbg
+fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega |
+efabcd cedba gadfec cb
+aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga |
+gecf egdcabf bgf bfgea
+fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf |
+gebdcfa ecba ca fadegcb
+dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf |
+cefg dcbef fcge gbcadfe
+bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd |
+ed bcgafe cdgba cbgef
+egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg |
+gbdfcae bgc cg cgb
+gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc |
+fgae cfgab fg bagce
+
+Because the digits 1, 4, 7, and 8 each use a unique number of segments, you
+should be able to tell which combinations of signals correspond to those digits.
+Counting only digits in the output values (the part after | on each line), in
+the above example, there are 26 instances of digits that use a unique number of
+segments (highlighted above).
+
+In the output values, how many times do digits 1, 4, 7, or 8 appear?
+
+
+** Ruby
+
+#+name: count_occurrences
+#+begin_src ruby
+  require 'set'
+  def count_occurrences(lines)
+      segment_counts = Set.new([2, 3, 4, 7])
+      occurrences = 0
+      lines.each do |line|
+        _, output = line.split('|')
+        digits = output.split(' ')
+        occurrences += digits.select { |d| segment_counts.include?(d.length) }.count
+      end
+
+      occurrences
+    end
+#+end_src
+
+#+RESULTS: count_occurrences
+: :count_occurrences
+
+#+begin_src ruby :noweb yes :tangle part1.rb
+  <<count_occurrences>>
+    
+  lines = File.readlines('input')
+  count_occurrences(lines)
+#+end_src
+
+#+RESULTS:
+: 255
+
+* Part 2
+
+** Ruby
+
+*** Finding the Mapping
+
+#+name: find_mapping
+#+begin_src ruby
+  require 'set'
+
+  def digit_to_segments
+    {
+      0 => Set.new('abcefg'.each_char),
+      1 => Set.new('cf'.each_char),
+      2 => Set.new('acdeg'.each_char),
+      3 => Set.new('acdfg'.each_char),
+      4 => Set.new('bcdf'.each_char),
+      5 => Set.new('abdfg'.each_char),
+      6 => Set.new('abdefg'.each_char),
+      7 => Set.new('acf'.each_char),
+      8 => Set.new('abcdefg'.each_char),
+      9 => Set.new('abcdfg'.each_char),
+    }
+  end
+
+  def possible_mappings(segments)
+    segments.map do |digit_segments|
+      [
+        digit_segments,
+        digit_to_segments.select { |_, segment| segment.length == digit_segments.length }.keys,
+      ]
+    end.to_h
+  end
+
+  def segments_in_common(segments1, segments2)
+    ((segments1 - segments2) || (segments2 - segments1)).length
+  end
+
+  def filter_invalid_mappings(possible_mappings:, resolved_mapping:)
+    new_possible_mappings = {}
+
+    possible_mappings.each do |segments, possible_digits|
+      digits = possible_digits.select do |digit|
+        resolved_mapping.all? do |resolved_segments, resolved_digit|
+          actual_digit_segments = digit_to_segments[digit]
+          resolved_digit_segments = digit_to_segments[resolved_digit]
+
+          actual_segments_in_common = segments_in_common(actual_digit_segments, resolved_digit_segments)
+          mapping_segments_in_common = segments_in_common(Set.new(segments.each_char),  Set.new(resolved_segments.each_char))
+          actual_segments_in_common == mapping_segments_in_common
+        end
+      end
+
+      new_possible_mappings[segments] = digits
+    end
+
+    new_possible_mappings
+  end
+
+  def remove_resolved_mappings(possible_mappings:, resolved_mapping:)
+    unresolved, resolved = possible_mappings.partition do |segments, possible_digits|
+      possible_digits.length > 1
+    end.map(&:to_h)
+
+    resolved = resolved.map { |k, v| [k, v.first] }.to_h
+
+    [unresolved, resolved_mapping.merge(resolved)]
+  end
+
+  def find_mapping(segments)
+    possible_mappings = possible_mappings(segments)
+    mapping = {}
+
+    possible_mappings, mapping = remove_resolved_mappings(possible_mappings: possible_mappings, resolved_mapping: mapping)
+
+    while !possible_mappings.empty?
+      possible_mappings = filter_invalid_mappings(
+        possible_mappings: possible_mappings,
+        resolved_mapping: mapping,
+      )
+      possible_mappings, mapping = remove_resolved_mappings(
+        possible_mappings: possible_mappings,
+        resolved_mapping: mapping,
+      )
+    end
+
+    mapping.map { |k, v| [Set.new(k.each_char), v] }.to_h
+  end
+#+end_src
+
+#+RESULTS: find_mapping
+: :find_mapping
+
+#+begin_src ruby :noweb yes 
+  <<find_mapping>>
+
+  lines = File.readlines('input')
+  pp find_mapping(lines[0].split('|')[0].split(' '))
+#+end_src
+
+#+RESULTS:
+| abeg | =>4 | afbdgec | =>8 | bgc | =>7 | bg | =>1 | bafdgc | =>0 | gbeacd | =>9 | abced | =>5 | bedgc | =>3 | fdceba | =>6 |
+
+*** Summing
+
+#+name: sum_lines
+#+begin_src ruby :noweb true
+  def sum_lines(lines)
+    lines.reduce(0) do |sum, line|
+      segments, output = line.split('|')
+      mapping = find_mapping(segments.split(' '))
+      output_value = 0
+      output.split.each_with_index do |segments, index|
+        segment_set = Set.new(segments.each_char)
+        output_value += mapping[segment_set]*(10**(3-index))
+      end
+      sum += output_value
+    end
+  end
+#+end_src
+
+#+begin_src ruby :noweb yes :tangle part2.rb
+  <<find_mapping>>
+  <<sum_lines>>
+    
+  lines = File.readlines('input')
+  sum_lines(lines)
+#+end_src
+
+#+RESULTS:
+: 982158
+
