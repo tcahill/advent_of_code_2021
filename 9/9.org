@@ -72,7 +72,6 @@ of all low points on your heightmap?
     map.each_with_index do |line, row|
       line.each_with_index do |height, column|
         if adjacent_points(map, row, column).all? { |i, j| map[i][j] > height }
-          pp [row, column]
           low_points << height
         end
       end
