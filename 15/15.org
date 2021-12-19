@@ -1,0 +1,110 @@
+* Part 1
+
+You've almost reached the exit of the cave, but the walls are getting closer
+together. Your submarine can barely still fit, though; the main problem is that
+the walls of the cave are covered in chitons, and it would be best not to bump
+any of them.
+
+The cavern is large, but has a very low ceiling, restricting your motion to two
+dimensions. The shape of the cavern resembles a square; a quick scan of chiton
+density produces a map of risk level throughout the cave (your puzzle input).
+For example:
+
+1163751742
+1381373672
+2136511328
+3694931569
+7463417111
+1319128137
+1359912421
+3125421639
+1293138521
+2311944581
+
+You start in the top left position, your destination is the bottom right
+position, and you cannot move diagonally. The number at each position is its
+risk level; to determine the total risk of an entire path, add up the risk
+levels of each position you enter (that is, don't count the risk level of your
+starting position unless you enter it; leaving it adds no risk to your total).
+
+Your goal is to find a path with the lowest total risk. In this example, a path
+with the lowest total risk is highlighted here:
+
+1163751742
+1381373672
+2136511328
+3694931569
+7463417111
+1319128137
+1359912421
+3125421639
+1293138521
+2311944581
+
+The total risk of this path is 40 (the starting position is never entered, so
+its risk is not counted).
+
+What is the lowest total risk of any path from the top left to the bottom right?
+
+** Ruby
+
+#+name: find_lowest_risk
+#+begin_src ruby
+  def find_lowest_risk(grid)
+    previous_positions = {}
+    risk_from_start = {}
+    heuristic_risk_to_end = {}
+
+    queue = [grid[0][0]]
+    while !queue.empty?
+      position = queue.pop
+      if position == [grid.length-1, grid.first.length-1]
+        return risk_from_start[position]
+      end
+
+      neighbors(position[0], position[1], grid).each do |neighbor|
+        row, column = neighbor
+        risk = risk_from_start[position] + grid[row][column]
+        if risk < risk_from_start[neighbor]
+          previous_positions[neighbor] = position
+          risk_from_start[neighbor] = risk
+          heuristic_risk_from_start[neighbor] = risk + distance_to_end(row, column, grid)
+          if !queue.include?(neighbor)
+            insert_index = queue.btree_index do |pos|
+              heuristic_risk_to_end[pos] > heuristic_risk_to_end[neighbor]
+            end
+            queue.insert(insert_index, neighbor)
+          end
+        end
+      end
+    end
+  end
+
+  def neighbors(row, column, grid)
+    neighbors = []
+
+    (row-1..row+1).each do |r|
+      (column-1..column+1).each do |c|
+        if r >= 0 && c >= 0 && r < grid.length && c < grid.first.length && !(r == row && c == column)
+          neighbors << [r, c]
+        end
+      end
+    end
+    neighbors
+  end
+
+  def distance_to_end(row, column, grid)
+    x_distance = (grid.first.length - 1) - column
+    y_distance = (grid.length - 1) - row
+    x_distance + y_distance
+  end
+#+end_src
+
+#+begin_src ruby :noweb yes :tangle part1.rb
+  <<find_lowest_risk>>
+  lines = File.readlines('input')
+    grid = lines.map { |line| line.strip.split('').map(&:to_i) }
+    find_lowest_risk(grid)
+#+end_src
+
+#+RESULTS:
